@@ -1,0 +1,396 @@
+
+import pygame
+import sys
+import random
+import math
+
+# --- 1. AYARLAR VE SABİTLER ---
+pygame.init()
+GENISLIK, YUKSEKLIK = 1200, 700
+EKRAN = pygame.display.set_mode((GENISLIK, YUKSEKLIK))
+pygame.display.set_caption("Okuma Anlama Oyunu - Atasözü Avcısı")
+CLOCK = pygame.time.Clock()
+
+# --- RENK PALETİ ---
+ARKA_PLAN = (245, 247, 250)
+KAGIT_RENGI = (255, 253, 230)
+CIZGI_RENGI = (200, 210, 225)
+METIN_RENGI = (45, 52, 54)
+
+RENK_PALETI = {
+    "YESIL": (46, 204, 113),
+    "KIRMIZI": (231, 76, 60),
+    "MAVI": (52, 152, 219),
+    "TURUNCU": (243, 156, 18),
+    "MOR": (155, 89, 182),
+    "KAHVERENGI": (139, 69, 19),
+    "ALTIN_SARISI": (255, 215, 0),
+    "KREM": (255, 250, 240)
+}
+
+# --- VERİLER ---
+TUM_ICERIK = {
+    "1. Sınıf": {
+        1: {
+            "hikaye": "                                                                      BAĞ BOZUMU\n      Çağatay'ın ailesinin çok büyük üzüm bağları varmış. Eylül ayının başında hasat yapmaya gitmişler. Bağa gittiklerinde Çağatay, sağlam üzümlerin yanında kararan üzümler de görmüş. Babasına neden o üzümlerin karardığını sormuş. Babası Çağatay'ın gösterdiği üzüme bakmış ve uzun süre güneş altında bekleyen üzümler kararır. demiş. ",
+            "sorular": ["1. Çağatay'ın ailesinin ne bağı varmış?", "2. Babası Çağatay'ın getirdiği neye bakmış?", "3. İpucu: 3. kelime (baka baka)", "4. Güneşte bekleyen üzümlere ne olur?"],
+            "cevaplar": ["üzüm", "üzüme", "baka baka", "kararır"]
+        },
+        2: {
+            "hikaye": "            \n               YAĞMUR SONRASI\n        Şirin kasabasında bir park varmış ve bu parkta kocaman yaşlı bir ağaç varmış. Bir gün yağmur yağmış ve her yer yaş olmuş.Yağmur durduktan sonra parka gelen çocuklar ağacı görünce şaşırmışlar. Yaşlı bir amca: 'Yağmur yağınca ağacın dalları eğilir' demiş.",
+            "sorular": ["1. Parktaki kocaman yaşlı şey nedir?", "2. Yağmurdan sonra her yer ne olmuş?", "3. İpucu kelime: iken", "4. Yağmur yağınca dallar ne yapar?"],
+            "cevaplar": ["ağaç", "yaş", "iken", "eğilir"]
+        },
+        3: {"hikaye": "  \n              PAZAR KAHVALTISI \n Soğuk bir kış pazarında Pelin ve ailesi birlikte kahvaltı yapıyormuş. Annesi kahvaltıyı hazırlarken domatesi tutan parmağını kesmiş. Pelin annesinin parmağını görünce çok üzülmüş. Annesi bal uzatıp bal yerse hemen iyileşeceğini söylemiş.", 
+            "sorular": ["Pelin annesine yemesi için ne uzatmış?", "Annesi domatesi ne yapan parmağı kesmiş?", "Annesi neyini kesmiş?", "İşte sana ipucu: 4. kelime: yalar"], 
+            "cevaplar": ["bal", "tutan", "parmağını", "yalar"]}
+    },
+    "2. Sınıf": {
+        1: {"hikaye": "       \n     MİSAFİRLERİN ZOR GECESİ        Selim'in gittiği evdeki yataklar çok küçüktü. Gözlerini yorganına dikti. Şikayetlenerek camı açtı. Dışarıdan gelen rüzgar ile ferahladı. O sırada uyanan arkadaşı Ege “Masanın üzerindeki suyu uzat.”dedi. Ege de sıcaktan bunalmıştı. Selim Ege'ye ayağını pencereye doğru uzatınca ferahlayacağını söyledi.Ege Selim'i dinledi ve ferah bir uyku çekti.   ", 
+            "sorular": ["1.SORU: Ege neyini pencereye doğru uzattı?","2. SORU: Selim gözlerini neye dikti?","3. SORU: İşte sana ipucu! 3. kelime: göre","4. SORU: Selim Ege'ye ayağını ne yap dedi?"], 
+            "cevaplar": ["ayağını","yorganına","göre","uzat"]},
+        2: {"hikaye": "        \n                ÇİFTLİK EVİ\nMustafa ahırlarındaki inekleri beslemek için torbadan samını dökmeye başlamış. Zamanı gelmediği için inekler yemi yememiş. Babası Mustafa'ya kalan yemi sakla sonra veririz demiş.",
+             "sorular": ["Babası kalan yemi ne yap demiş?", "Mustafa torbadan neyi dökmüş?", "İşte ipucu! 3. kelime:gelir", "Ney gelmediği için inekler yemi yememiş?"],
+            "cevaplar": ["sakla", "samanı", "gelir", "zamanı"]},
+        3: {"hikaye": "\n               UYANMA VAKTİ\n Okuldan eve gelen Buse hemen uyumuş. Yol uzun sürdüğü için çok yorulmuş. Tatilde hep geç kalkan Buse okul saatlerine alışamamış. Erken uyandığı için okula hep uykusuz gidiyormuş.",
+             "sorular": ["Nasıl kalktığı için uykusuz kalmış?", "Geç ne yapan Buse okul saatne alışamamıış?", "Uuzn süren şey nedir?", "İşte sana ipucu! 4. kelime: alır"],
+               "cevaplar": ["erken", "kalkan", "yol", "alır"]}
+    },
+    "3. Sınıf": {
+        1: {"hikaye": "\n               AKŞAM YEMEĞİ\n  Bir akşam Mutlu ailesi hep beraber yemek yiyormuş. Anne yemeklere çok emek vermiş.Bu yüzden çok yorulmuş. Yemek sonrası tatlı gelmiş. Baba neden tatlı yapıp kendini yordun demiş. Anne de tatlısız olmaz demiş.",
+            "sorular": ["SORU 1: Anne yemeklere ne vermiş?", "SORU 2: İpucu! 2.kelime: olmadan", "SORU 3: Mutlu ailesi hep beraber ne yemiş?", "SORU 4: Anne tatlısız ..... demiş"], 
+            "cevaplar": ["emek", "olmadan", "yemek", "olmaz"]},
+        2: {"hikaye": "\n           BAHÇEDEKİ SÜRPRİZ\n Okulun bahçesinde küçük bir kedi vardı. Ayça onu sevmek istedi ama korkunun kalbini kapladığını hissetti. Veteriner geldi ve kediyi muayene etti ve kedinin oyun istediğini söyledi. Ayça yardımın büyük faydası olur diye düşündü. Boş yere panik yapmanın da hiçbir faydası yoktur dedi ve kediyle oyun oynadı. ",
+             "sorular": ["SORU 1: Kalbini neyin kapladığını hissetti?","SORU 2: İşte sana ipucu! 2. kelime: ecele", "SORU 3: Yardımın ne olacağını düşünmüş?", "SORU 4: Panik yapmanın hiçbir anlamı ....."],
+               "cevaplar": ["korkunun","ecele","faydası","yoktur"]},
+        3: {"hikaye": "\n                       ŞEKERLER\n Efe şekerleri çok sevdi. Masada bir tabak dolusu şeker vardı. Bunların çoğu benim olsun diye düşündü. Sonra annesi, fazlası sana zarar verir dedi. Efe durdu, düşündü. Bir iki tane aldı ve bu kadar azı yeter dedi kendi kendine. Akşam babası bugün güzel bir karar vermişsin aferin dedi. Efe gülümsedi, karnı da hiç ağrımadı.",
+             "sorular": ["SORU 1: Efe şekerin ne kadarını almak istedi?","SORU 2: Çok şeker yemek ona ne verir?","SORU 3: Efe sonunda şekerin ne kadarını aldı?","SORU 4: Az şeker onun için ne oldu?" ],
+             "cevaplar": ["çoğu","zarar","azı","yarar"]}
+    },
+    "4. Sınıf": {
+        1: {"hikaye": "\n                   PANİK ANI \n Sahil kenarında oynayan Kerem birden kaydı ve denize doğru yuvarlandı. Taşlara takılıp düşen Kerem çok korktu. O sırada suda garip bir şey gördü. Suya girmiş uzun bir hortum uzaktan bakınca yılana benziyordu. Kerem panikleyip hemen o hortuma sarılır ve babasının onu kurtarmasını bekler.", 
+            "sorular": ["SORU 1: Kerem nereye doğru yuvarlandı?","SORU 2:Kerem taşlara takılıp ne yaptı?","SORU 3:Suda gördüğü şey neye benziyordu?","SORU 4:Kerem korkunca hortuma ne yaptı?"], 
+            "cevaplar": ["denize", "düşen", "yılana", "sarılır"]},
+        2: {"hikaye": "\n             KONUŞMAK YETMEZ \n Okulda kermes vardı. Herkes bir şeyler hazırlıyordu.Ayça, “Ben çok iyiyim, her şeyi yaparım,” diye hep lafla konuştu.Ama hiç yardım etmedi.Mert, annesiyle birlikte börek ve peynir getirdi.Okulun bahçesine, geçen yıl geldikleri büyük bir savaş gemisi maketi kondu.Herkes çalışırken iş hızlı gitti.Öğretmen, “Sadece konuşursak işler yürümez,” dedi. ", 
+            "sorular": ["SORU 1: Ayça neyle konuştu?", "SORU 2: Mert börek ve ne getirdi?","SORU 3: Savaş neyinin maketi koyuldu?","SORU 4: Sadece konuma ile işler ne olmaz?"],
+              "cevaplar": ["lafla","peynir","gemisi","yürümez"]},
+        3: {"hikaye": " \n               GEÇ KALAN ÖDEV \n Can ödevini hep erteledi. “Yarın yaparım,” dedi durdu. Öğretmen ödevi isteyince yapamk için son sıraya geçti. Ama vakit kalmadı. Can içini çekti; içinde bir pişmanlık oluştu. Arkadaşı yardım etmeye çalıştı, ama bu artık bir fayda sağlamadı. Öğretmen, “Bazı işler geç kalınca yetişmez,” dedi. Can o günden sonra ödevlerini zamanında yaptı.", 
+            "sorular": ["SORU 1: Hangi sıraya geçti?","SORU 2: Can geç kalınca ne hissetti?","SORU 3: Arkadaşının yardımı ne sağlamadı?","SORU 4: İşte sana ipucu! 4. kelime: etmez"],
+              "cevaplar": ["son","pişmanlık","fayda","etmez"]}
+    }
+}
+
+# --- 2. TEMEL SINIFLAR ---
+
+class ArayuzElemani:
+    def __init__(self, x, y, g, yk):
+        self.r = pygame.Rect(x, y, g, yk)
+        self.aktif = False
+    
+    def ciz(self, ekran):
+        pass
+
+    def handle(self, e):
+        pass
+
+class Konfeti:
+    def __init__(self): 
+        self.p = [[random.randint(0,GENISLIK), random.randint(-500,-50), random.randint(3,8), random.choice(list(RENK_PALETI.values())[:5]), random.randint(5,10)] for _ in range(100)]
+    def ciz(self, ekran):
+        for p in self.p:
+            p[1]+=p[2]; p[0]+=math.sin(p[1]/20)*2
+            pygame.draw.circle(ekran, p[3], (int(p[0]), int(p[1])), p[4])
+            if p[1]>YUKSEKLIK: p[1]=random.randint(-100,-10); p[0]=random.randint(0,GENISLIK)
+
+class AhsapButon(ArayuzElemani):
+    def __init__(self, x, y, g, yk, metin): 
+        super().__init__(x, y, g, yk)
+        self.m = metin
+        self.tik = False
+        
+    def ciz(self, ekran):
+        s = 2 if self.r.collidepoint(pygame.mouse.get_pos()) else 0
+        dr = self.r.inflate(s*2, s*2)
+        pygame.draw.rect(ekran, (184,134,11), dr, border_radius=30)
+        pygame.draw.rect(ekran, (255,215,0), dr.inflate(-6,-6), border_radius=30)
+        ir = dr.inflate(-12,-12)
+        pygame.draw.rect(ekran, (101,67,33), ir, border_radius=25)
+        pygame.draw.rect(ekran, (60,30,10), ir.inflate(-6,-6), border_radius=25)
+        
+        f = self._font_getir(32, True, True)
+        yazi_golge = f.render(self.m, True, (0,0,0))
+        yazi_golge_rect = yazi_golge.get_rect(center=(dr.centerx+2, dr.centery+3))
+        ekran.blit(yazi_golge, yazi_golge_rect)
+        
+        yazi = f.render(self.m, True, (255,250,240))
+        yazi_rect = yazi.get_rect(center=dr.center)
+        ekran.blit(yazi, yazi_rect)
+        self.tik = False
+
+    def tiklandi_mi(self, e): 
+        return e.type == pygame.MOUSEBUTTONDOWN and self.r.collidepoint(e.pos)
+
+    def _font_getir(self, boyut, kalin=False, serif=False):
+        mevcut = pygame.font.get_fonts()
+        f_adi = ("timesnewroman" if "timesnewroman" in mevcut else "georgia") if serif else ("comicsansms" if "comicsansms" in mevcut else "arial")
+        return pygame.font.SysFont(f_adi, boyut, bold=kalin)
+
+# --- GÜNCELLENEN INPUTBOX SINIFI ---
+class InputBox(ArayuzElemani):
+    def __init__(self, x, y, g, yk, cevap, no): 
+        super().__init__(x, y, g, yk)
+        self.t, self.c, self.n, self.d = "", cevap, no, False
+        self.font_kutu = self._font_getir(20)
+        self.font_soru = self._font_getir(18)
+        
+        # İmleç için değişkenler
+        self.imlec_gorunur = True
+        self.son_yanip_sonme = pygame.time.get_ticks()
+        
+    def handle(self, e):
+        if self.d: return
+        if e.type == pygame.MOUSEBUTTONDOWN: self.aktif = self.r.collidepoint(e.pos)
+        if e.type == pygame.KEYDOWN and self.aktif:
+            if e.key == pygame.K_RETURN: 
+                # --- YENİ MANTIK BURADA ---
+                if self.t.lower().strip() == self.c.lower():
+                    self.d = True
+                    self.aktif = False
+                else:
+                    self.t = "" # Cevap yanlışsa metni sil
+            elif e.key == pygame.K_BACKSPACE: 
+                self.t = self.t[:-1]
+            else: 
+                # Taşmayı önlemek için basit karakter sınırı
+                if len(self.t) < 12: 
+                    self.t += e.unicode
+
+    def ciz(self, ekran):
+        rk = RENK_PALETI["YESIL"] if self.d else (RENK_PALETI["MAVI"] if self.aktif else RENK_PALETI["KAHVERENGI"])
+        pygame.draw.rect(ekran, (255,255,255), self.r, border_radius=10)
+        pygame.draw.rect(ekran, rk, self.r, 3, border_radius=10)
+        
+        # Metni çiz
+        yazi_yuzeyi = self.font_kutu.render(self.t, True, METIN_RENGI)
+        ekran.blit(yazi_yuzeyi, (self.r.x+10, self.r.y+15))
+        
+        # Soru numarası etiketi
+        pygame.draw.rect(ekran, rk, (self.r.x, self.r.y-25, 60, 20), border_radius=5)
+        ekran.blit(self._font_getir(12, True).render(f"Soru {self.n}", True, (255,255,255)), (self.r.x+5, self.r.y-23))
+        
+        if self.d: 
+            ekran.blit(self.font_soru.render("✓", True, RENK_PALETI["YESIL"]), (self.r.right-20, self.r.y+10))
+        
+        # --- İMLEÇ ÇİZİMİ ---
+        if self.aktif and not self.d:
+            simdi = pygame.time.get_ticks()
+            if simdi - self.son_yanip_sonme > 500: # 500ms bekleme süresi
+                self.imlec_gorunur = not self.imlec_gorunur
+                self.son_yanip_sonme = simdi
+            
+            if self.imlec_gorunur:
+                metin_genislik = yazi_yuzeyi.get_width()
+                imlec_x = self.r.x + 10 + metin_genislik + 2
+                pygame.draw.line(ekran, METIN_RENGI, (imlec_x, self.r.y + 15), (imlec_x, self.r.y + 35), 2)
+
+    def _font_getir(self, boyut, kalin=False):
+        mevcut = pygame.font.get_fonts()
+        return pygame.font.SysFont("comicsansms" if "comicsansms" in mevcut else "arial", boyut, bold=kalin)
+
+# --- 3. OYUN YÖNETİCİSİ ---
+
+class AtasozuOyunu:
+    def __init__(self):
+        self.durum = "MENU"
+        self.sinif = ""
+        self.akt_bolum = 1
+        self.hedef_bolum = 1
+        self.kutular = []
+        self.konfeti = Konfeti()
+        
+        # Fontlar
+        self.font_baslik = self.font_getir(40, True)
+        self.font_metin1 = self.font_getir(17)
+        self.font_soru1 = self.font_getir(18)
+        self.font_buyuk = self.font_getir(60, True)
+        self.font_talimat = self.font_getir(16, True, serif=True)
+        
+        self.resimleri_yukle()
+        self.arayuz_olustur()
+
+    def font_getir(self, boyut, kalin=False, serif=False):
+        mevcut = pygame.font.get_fonts()
+        f_adi = ("timesnewroman" if "timesnewroman" in mevcut else "georgia") if serif else ("comicsansms" if "comicsansms" in mevcut else "arial")
+        return pygame.font.SysFont(f_adi, boyut, bold=kalin)
+
+    def resim_yukle(self, dosya_adi, ozel_boyut=None):
+        try:
+            img = pygame.image.load(dosya_adi)
+            if ozel_boyut: return pygame.transform.smoothscale(img, ozel_boyut)
+            return pygame.transform.smoothscale(img, (GENISLIK, YUKSEKLIK))
+        except: return None
+
+    def resimleri_yukle(self):
+        self.img_arkaplan = self.resim_yukle("giriş.png")
+        self.img_harita = self.resim_yukle("harita.png")
+        self.img_bolum1 = self.resim_yukle("bölüm.jpg") or self.resim_yukle("bölüm.png")
+        self.img_bolum2 = self.resim_yukle("bölüm2.png") or self.img_bolum1
+        self.img_bolum3 = self.resim_yukle("bölüm3.png") or self.img_bolum1
+        self.img_bolum4 = self.resim_yukle("bölüm4.png") or self.img_bolum1
+        self.img_hikaye = self.resim_yukle("hikaye.png")
+        self.img_hikaye2 = self.resim_yukle("hikaye2son.png")
+        self.img_hikaye3 = self.resim_yukle("hikaye3son.png")
+        self.img_hikaye4 = self.resim_yukle("hikaye4son.png")
+        self.img_gezgin = self.resim_yukle("karakter.png", (250, 250))
+
+    def arayuz_olustur(self):
+        # Butonları başlat
+        koor = [(130, 330), (360, 560), (660, 450), (940, 400)]
+        self.sinif_btn = [AhsapButon(koor[i][0], koor[i][1], 160, 60, f"{i+1}. Sınıf") for i in range(4)]
+        
+        self.seviye_btn = [AhsapButon(0, 0, 180, 70, f"Bölüm {i+1}") for i in range(3)]
+        
+        self.geri_btn = AhsapButon(40, 40, 150, 50, "< Geri")
+        self.menu_btn = AhsapButon(40, 40, 150, 50, "< Menü")
+        self.basla_btn = AhsapButon(GENISLIK//2-200, 350, 200, 70, "BAŞLA")
+        self.cikis_btn = AhsapButon(GENISLIK//2+10, 350, 200, 70, "ÇIKIŞ")
+        self.talimat_basla_btn = AhsapButon(GENISLIK//2 - 100, YUKSEKLIK//2 + 150, 200, 70, "AVLA")
+
+    def bolum_baslat(self, s, b):
+        self.akt_bolum = b
+        self.kutular = []
+        if b in TUM_ICERIK[s]:
+            cvp = TUM_ICERIK[s][b]["cevaplar"]
+            for i, c in enumerate(cvp): 
+                self.kutular.append(InputBox(640+(i*95), 510, 85, 50, c, i+1))
+            return True
+        return False
+
+    def metin_sarmala(self, text, font, renk, max_g, x, y):
+        for paragraf in text.splitlines():
+            satir, cumle = y, ""
+            for kelime in paragraf.split(' '):
+                if font.size(cumle + kelime)[0] < max_g: cumle += kelime + " "
+                else: EKRAN.blit(font.render(cumle, True, renk), (x, satir)); satir += font.get_height() + 5; cumle = kelime + " "
+            EKRAN.blit(font.render(cumle, True, renk), (x, satir)); y = satir + font.get_height() + 15
+
+    def arka_plan_ciz(self):
+        img = None
+        if self.durum == "MENU": img = self.img_arkaplan
+        elif self.durum == "SINIF_SECIM": img = self.img_harita
+        elif self.durum == "SEVIYE_SECIM" or self.durum == "TALIMAT":
+            if self.sinif == "2. Sınıf": img = self.img_bolum2
+            elif self.sinif == "3. Sınıf": img = self.img_bolum3
+            elif self.sinif == "4. Sınıf": img = self.img_bolum4
+            else: img = self.img_bolum1
+        elif self.durum == "OYUN":
+            if self.sinif == "2. Sınıf" and self.akt_bolum == 1: img = self.img_hikaye2
+            elif self.sinif == "3. Sınıf": img = self.img_hikaye3
+            elif self.sinif == "4. Sınıf": img = self.img_hikaye4
+            else: img = self.img_hikaye
+        
+        if img: EKRAN.blit(img, (0, 0))
+        else: EKRAN.fill(ARKA_PLAN)
+
+    def konusma_balonu_ciz(self, x, y, g, yk, metin):
+        rect = pygame.Rect(x, y, g, yk)
+        pygame.draw.rect(EKRAN, KAGIT_RENGI, rect, border_radius=20)
+        pygame.draw.rect(EKRAN, RENK_PALETI["KAHVERENGI"], rect, 3, border_radius=20)
+        pygame.draw.polygon(EKRAN, KAGIT_RENGI, [(x, y+yk//2), (x-40, y+yk//2+20), (x, y+yk//2+40)])
+        pygame.draw.line(EKRAN, RENK_PALETI["KAHVERENGI"], (x, y+yk//2), (x-40, y+yk//2+20), 3)
+        pygame.draw.line(EKRAN, RENK_PALETI["KAHVERENGI"], (x-40, y+yk//2+20), (x, y+yk//2+40), 3)
+        self.metin_sarmala(metin, self.font_talimat, METIN_RENGI, g-40, x+20, y+30)
+
+    def calistir(self):
+        # Oyun Döngüsü
+        while True:
+            CLOCK.tick(60)
+            self.arka_plan_ciz()
+            olaylar = pygame.event.get()
+
+            for e in olaylar:
+                if e.type == pygame.QUIT: sys.exit()
+                if self.durum == "OYUN": [k.handle(e) for k in self.kutular]
+
+            if self.durum == "MENU":
+                self.basla_btn.ciz(EKRAN); self.cikis_btn.ciz(EKRAN)
+                if any(self.basla_btn.tiklandi_mi(e) for e in olaylar): self.durum = "SINIF_SECIM"
+                if any(self.cikis_btn.tiklandi_mi(e) for e in olaylar): sys.exit()
+
+            elif self.durum == "SINIF_SECIM":
+                self.menu_btn.ciz(EKRAN)
+                if any(self.menu_btn.tiklandi_mi(e) for e in olaylar): self.durum = "MENU"
+                for b in self.sinif_btn:
+                    b.ciz(EKRAN)
+                    if any(b.tiklandi_mi(e) for e in olaylar): self.sinif = b.m; self.durum = "SEVIYE_SECIM"
+
+            elif self.durum == "SEVIYE_SECIM":
+                self.geri_btn.ciz(EKRAN)
+                if any(self.geri_btn.tiklandi_mi(e) for e in olaylar): self.durum = "SINIF_SECIM"
+                
+                SINIF_KOORDINATLARI = {
+                    "1. Sınıf": [(590, 280), (860, 280), (730, 420)],
+                    "2. Sınıf": [(630, 270), (880, 270), (770, 410)],
+                    "3. Sınıf": [(380, 280), (650, 280), (510, 420)],
+                    "4. Sınıf": [(670, 280), (940, 280), (800, 420)]
+                }
+
+                for i, b in enumerate(self.seviye_btn):
+                    b_no = i+1
+                    if self.sinif in SINIF_KOORDINATLARI:
+                        if i < len(SINIF_KOORDINATLARI[self.sinif]):
+                            b.r.x, b.r.y = SINIF_KOORDINATLARI[self.sinif][i]
+                    else:
+                        b.r.centerx, b.r.y = GENISLIK//2, 220+i*90
+                    
+                    if b_no in TUM_ICERIK[self.sinif]:
+                        b.ciz(EKRAN)
+                        if any(b.tiklandi_mi(e) for e in olaylar):
+                            if self.sinif == "1. Sınıf" and b_no == 1: self.hedef_bolum = b_no; self.durum = "TALIMAT"
+                            elif self.bolum_baslat(self.sinif, b_no): self.durum = "OYUN"
+
+            elif self.durum == "TALIMAT":
+                ov = pygame.Surface((GENISLIK, YUKSEKLIK)); ov.set_alpha(180); ov.fill((0,0,0)); EKRAN.blit(ov, (0,0))
+                if self.img_gezgin: EKRAN.blit(self.img_gezgin, (100, 250))
+                self.konusma_balonu_ciz(400, 150, 600, 300, "    Merhaba minik avcı!\nBen Gezgin Yun. Bu macerada seninle beraberiz.Hikayeyi oku ve soruları cevapla. Senin için hazırlanan şifreyi bul.\n\nHadi avlayalım şu atasözlerini!")
+                self.talimat_basla_btn.ciz(EKRAN)
+                if any(self.talimat_basla_btn.tiklandi_mi(e) for e in olaylar):
+                    if self.bolum_baslat(self.sinif, self.hedef_bolum): self.durum = "OYUN"
+
+            elif self.durum == "OYUN":
+                self.geri_btn.ciz(EKRAN)
+                if any(self.geri_btn.tiklandi_mi(e) for e in olaylar): self.durum = "SEVIYE_SECIM"
+                v = TUM_ICERIK[self.sinif][self.akt_bolum]
+                
+                self.metin_sarmala(v["hikaye"], self.font_metin1, METIN_RENGI, 300, 245, 165)
+                for i, s in enumerate(v["sorular"]): 
+                    EKRAN.blit(self.font_soru1.render(s, True, METIN_RENGI), (620, 190+i*50))
+
+                [k.ciz(EKRAN) for k in self.kutular]
+                if all(k.d for k in self.kutular):
+                    ov = pygame.Surface((GENISLIK, YUKSEKLIK)); ov.set_alpha(160); ov.fill((30,30,30)); EKRAN.blit(ov, (0,0))
+                    self.konfeti.ciz(EKRAN)
+                    pr = pygame.Rect(GENISLIK//2-250, YUKSEKLIK//2-180, 500, 300)
+                    pygame.draw.rect(EKRAN, (184,134,11), pr, border_radius=35); pygame.draw.rect(EKRAN, (255,215,0), pr.inflate(-6,-6), border_radius=35)
+                    ir = pr.inflate(-15,-15); pygame.draw.rect(EKRAN, (101,67,33), ir, border_radius=30); pygame.draw.rect(EKRAN, (60,30,10), ir.inflate(-8,-8), border_radius=30)
+                    
+                    tg = self.font_buyuk.render("HARİKA!", True, (0,0,0))
+                    ty = self.font_buyuk.render("HARİKA!", True, (255,215,0))
+                    EKRAN.blit(tg, tg.get_rect(center=(pr.centerx+3, pr.y+83))); EKRAN.blit(ty, ty.get_rect(center=(pr.centerx, pr.y+80)))
+                    
+                    ay = self.font_getir(30, True, True).render("Bölümü Tamamladın", True, (255,250,240))
+                    EKRAN.blit(ay, ay.get_rect(center=(pr.centerx, pr.y+160)))
+                    
+                    gel = self.akt_bolum+1
+                    if gel in TUM_ICERIK[self.sinif]:
+                        sb = AhsapButon(GENISLIK//2-150, pr.bottom-90, 320, 70, "SONRAKİ BÖLÜM"); sb.ciz(EKRAN)
+                        if any(sb.tiklandi_mi(e) for e in olaylar): self.bolum_baslat(self.sinif, gel)
+                    else:
+                        by = self.font_getir(30, True).render("TÜM BÖLÜMLER BİTTİ!", True, (46,204,113))
+                        EKRAN.blit(by, by.get_rect(center=(pr.centerx, pr.bottom-60)))
+            
+            pygame.display.flip()
+
+if __name__ == "__main__":
+    oyun = AtasozuOyunu()
+    oyun.calistir()
